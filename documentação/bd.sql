@@ -1,0 +1,47 @@
+CREATE SCHEMA `api`;
+USE `api`;
+
+CREATE TABLE IF NOT EXISTS `cliente` (
+	`id_cliente` INT(11) AUTO_INCREMENT NOT NULL PRIMARY KEY,
+	`nome` VARCHAR(100) NOT NULL ,
+	`cpf` VARCHAR(11) UNIQUE NOT NULL,
+	`cadastrado_em` TIMESTAMP DEFAULT NOW()
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS `moeda` (
+	`id_moeda` INT(11) AUTO_INCREMENT NOT NULL PRIMARY KEY,
+	`sigla_moeda` VARCHAR(3) NOT NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS `conta` (
+	`id_conta` INT(11) AUTO_INCREMENT NOT NULL PRIMARY KEY,
+	`id_cliente` INT(11) NOT NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS `conta_moeda` (
+	`id_conta_moeda` INT(11) AUTO_INCREMENT NOT NULL PRIMARY KEY,
+	`id_conta` INT(11) NOT NULL,
+	`id_moeda` INT(11) NOT NULL,
+	`saldo` DECIMAL(13,4) NOT NULL DEFAULT 0.0,
+	FOREIGN KEY (`id_conta`) REFERENCES `conta`(`id_conta`) ON DELETE CASCADE,
+	FOREIGN KEY (`id_moeda`) REFERENCES `moeda`(`id_moeda`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS `saque` (
+	`id_saque` INT(11) AUTO_INCREMENT NOT NULL PRIMARY KEY,
+	`id_conta_moeda` INT(11) NOT NULL,
+	`saldo` DECIMAL(13,4) NOT NULL DEFAULT 0.0,
+	`realizado_em` TIMESTAMP DEFAULT NOW(),
+	FOREIGN KEY (`id_conta_moeda`) REFERENCES `conta_moeda`(`id_conta_moeda`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS `deposito` (
+	`id_deposito` INT(11) AUTO_INCREMENT NOT NULL PRIMARY KEY,
+	`id_conta_moeda` INT(11) NOT NULL,
+	`saldo` DECIMAL(13,4) NOT NULL DEFAULT 0.0,
+	`reealizado_em` TIMESTAMP DEFAULT NOW(),
+	FOREIGN KEY (`id_conta_moeda`) REFERENCES `conta_moeda`(`id_conta_moeda`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+
+
