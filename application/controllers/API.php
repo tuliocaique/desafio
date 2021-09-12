@@ -1,54 +1,45 @@
-<?php defined('BASEPATH') OR exit('No direct script access allowed');
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
 
 class API extends CI_Controller
 {
-    /**
-     * Lista dos métodos HTTP permitidos
-     *
-     * @var array
-     */
-    protected $allowed_http_methods = ['get', 'delete', 'post', 'put', 'options', 'patch', 'head'];
-
+	const HTTP_OK = 200;
+	const HTTP_BAD_REQUEST = 400;
+	const HTTP_UNAUTHORIZED = 401;
+	const HTTP_NOT_FOUND = 404;
     const HTTP_METHOD_NOT_ALLOWED = 405;
-    const HTTP_BAD_REQUEST = 400;
-    const HTTP_REQUEST_TIMEOUT = 408;
-    const HTTP_NOT_FOUND = 404;
-    const HTTP_UNAUTHORIZED = 401;
-    const HTTP_OK = 200;
-    const HEADER_STATUS_STRINGS = [
-        '405' => 'HTTP/1.1 405 Method Not Allowed',
-        '400' => 'BAD REQUEST',
-        '408' => 'Request Timeout',
-        '404' => 'NOT FOUND',
-        '401' => 'UNAUTHORIZED',
-        '200' => 'OK',
-    ];
+    const HTTP_METHOD_NOT_ACCEPTABLE = 406;
+	const HTTP_REQUEST_TIMEOUT = 408;
 
-    /**
-     * RETURN DATA
-     */
-    protected $return_other_data = [];
+	protected $hedarStatus;
+	protected $allowed_http_methods;
+    protected $return_other_data;
+	protected $CI;
 
-	/**
-	 * @var CI_Controller
-	 */
-	private $CI;
 
-	/**
-	 *
-	 */
 	public function __construct() {
         parent::__construct();
         $this->CI =& get_instance();
+		$this->hedarStatus = array(
+			'200' => 'OK',
+			'401' => 'UNAUTHORIZED',
+			'400' => 'BAD REQUEST',
+			'404' => 'NOT FOUND',
+			'405' => 'METHOD NOT ALLOWED',
+			'406' => 'METHOD NOT ACCEPTABLE',
+			'408' => 'REQUEST TIMEOUT',
+		);
+		$this->allowed_http_methods = array('get', 'delete', 'post', 'put', 'options', 'patch', 'head');
+		$this->return_other_data = array();
 
         date_default_timezone_set('America/Sao_Paulo');
     }
 
 	/**
 	 * @param array $config
-	 * @return $this|array[]
+	 * @return $this
 	 */
-	public function config(array $config = [])
+	public function config(array $config = array())
     {
         // return other data
         if(isset($config['data']))
@@ -56,7 +47,7 @@ class API extends CI_Controller
 
         // by default method `GET`
         if ((isset($config) AND empty($config)) OR empty($config['methods'])) {
-            $this->_allow_methods(['GET']);
+            $this->_allow_methods(array('GET'));
         } else {
             $this->_allow_methods($config['methods']);
         }
@@ -81,24 +72,25 @@ class API extends CI_Controller
             if (in_array(strtolower($REQUEST_METHOD), $methods) OR in_array(strtoupper($REQUEST_METHOD), $methods))
               return true; // allow request method
             else
-              $this->_response(['status' => FALSE, 'error' => 'Método não permitido.', 'request' => $REQUEST_METHOD], self::HTTP_METHOD_NOT_ALLOWED); // not allow request method
+              $this->_response(array('status' => FALSE, 'error' => 'Método não permitido.', 'request' => $REQUEST_METHOD), self::HTTP_METHOD_NOT_ALLOWED); // not allow request method
         }
-		$this->_response(['status' => FALSE, 'error' => 'Método não conhecido', 'request' => $REQUEST_METHOD], self::HTTP_METHOD_NOT_ALLOWED);
+		$this->_response(array('status' => FALSE, 'error' => 'Método não conhecido', 'request' => $REQUEST_METHOD), self::HTTP_METHOD_NOT_ALLOWED);
 	}
 
-    /**
-     * Check Request Header Exists
-     * @return ['status' => true, 'value' => value ]
-     */
+	/**
+	 * Check Request Header Exists
+	 * @param $header_name
+	 * @return array ['status' => true, 'value' => value ]
+	 */
     private function exists_header($header_name)
     {
         $headers = apache_request_headers();
         foreach ($headers as $header => $value) {
             if($header === $header_name) {
-                return ['status' => true, 'value' => $value ];
+                return array('status' => true, 'value' => $value);
             }
         }
-		return ['status' => false, 'value' => NULL ];
+		return array('status' => false, 'value' => NULL);
     }
 
 	/**
@@ -109,10 +101,10 @@ class API extends CI_Controller
 		ob_start();
 		header("Access-Control-Allow-Origin: *");
 		header('content-type:application/json; charset=UTF-8');
-		header(self::HEADER_STATUS_STRINGS[$http_code], true, $http_code);
+		header($this->hedarStatus[$http_code], true, $http_code);
 
 		if (!is_array($this->return_other_data)) {
-			print_r(json_encode(['status' => false, 'error' => 'Formato de dados inválido']));
+			print_r(json_encode(array('status' => false, 'error' => 'Formato de dados inválido')));
 		} else {
 			print_r(json_encode(array_merge($data, $this->return_other_data)));
 		}
@@ -128,8 +120,49 @@ class API extends CI_Controller
         ob_start();
 		header("Access-Control-Allow-Origin: *");
         header('content-type:application/json; charset=UTF-8');
-        header(self::HEADER_STATUS_STRINGS[$http_code], true, $http_code);
+        header($this->hedarStatus[$http_code], true, $http_code);
         print_r(json_encode($data));
         ob_end_flush();
     }
+
+	public function get($endpoint){
+		$curl = curl_init();
+
+		curl_setopt_array($curl, array(
+			CURLOPT_URL => $endpoint,
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_ENCODING => '',
+			CURLOPT_MAXREDIRS => 10,
+			CURLOPT_TIMEOUT => 0,
+			CURLOPT_FOLLOWLOCATION => true,
+			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+			CURLOPT_CUSTOMREQUEST => 'GET',
+			CURLOPT_HTTPHEADER => array(),
+		));
+
+		$response = curl_exec($curl);
+		curl_close($curl);
+		return json_decode($response, true);
+	}
+
+	public function post($endpoint, $data){
+		$curl = curl_init();
+
+		curl_setopt_array($curl, array(
+			CURLOPT_URL => $endpoint,
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_ENCODING => '',
+			CURLOPT_MAXREDIRS => 10,
+			CURLOPT_TIMEOUT => 0,
+			CURLOPT_FOLLOWLOCATION => true,
+			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+			CURLOPT_CUSTOMREQUEST => 'POST',
+			CURLOPT_POSTFIELDS => $data,
+		));
+
+		$response = curl_exec($curl);
+
+		curl_close($curl);
+		return json_decode($response, true);
+	}
 }
