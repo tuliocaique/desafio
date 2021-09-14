@@ -18,19 +18,27 @@ class Saldo extends API {
 		date_default_timezone_set( 'America/Sao_Paulo' );
 	}
 
-	//Metodo que retorna o saldo de uma conta informada contendo todas as moedas
+    /**
+     * @api {GET} /saldo/{id_conta}
+     * @apiSampleRequest /saldo/25
+     * @apiName Saldo da Conta
+     * @apiGroup Saldo
+     * @apiDescription Retorna o saldo de uma conta informada contendo todas as moedas
+     * @apiParam {numeric} [id_conta] obrigatório
+     */
 	public function getSaldoDaConta($saldo_id_conta){
 		self::config(array(
 			'methods' => array('GET')
 		));
 
 		if (is_numeric($saldo_id_conta)) {
-			$conta = $this->Conta->verificaSeContaExiste($saldo_id_conta);
+			$contaExiste = $this->Conta->verificaSeContaExiste($saldo_id_conta);
 
-			if($conta > 0){
+			if($contaExiste){
 				$response = array();
 				$response['conta'] = intval($saldo_id_conta);
-				$response['data'] = date("d-m-Y H:i:s");
+				$response['consulta_realizada_em'] = date("d-m-Y H:i:s");
+
 				$saldo = $this->Saldo->getSaldoDaConta($saldo_id_conta);
 				foreach ($saldo as $index => $moeda){
 					$response['saldo'][$index]['valor'] = number_format((float)$moeda['saldo_valor'], 2, '.', '');
@@ -44,7 +52,7 @@ class Saldo extends API {
 				), self::HTTP_OK);
 			} else self::response(array(
 				"success" => false,
-				"status" => 400,
+				"status" => self::HTTP_BAD_REQUEST,
 				"error" => "Não existe uma conta com a id informada."
 			), self::HTTP_BAD_REQUEST);
 		} else self::response(array(
@@ -54,7 +62,15 @@ class Saldo extends API {
 			), self::HTTP_BAD_REQUEST);
 	}
 
-	//Metodo que retorna o saldo de uma conta contendo apenas a moeda informada
+    /**
+     * @api {GET} /saldo/{id_conta}/{moeda}
+     * @apiSampleRequest /saldo/25/BRL
+     * @apiName Saldo da Conta Por Moeda
+     * @apiGroup Saldo
+     * @apiDescription Retorna o saldo de uma moeda de uma conta informada
+     * @apiParam {numeric} [id_conta] obrigatório
+     * @apiParam {String} [moeda] obrigatório
+     */
 	public function getSaldoDaContaPorMoeda($saldo_id_conta, $saldo_moeda){
 		self::config(array(
 			'methods' => array('GET')
@@ -99,6 +115,7 @@ class Saldo extends API {
 			"error" => "O paramêtro de conta informado não é um valor aceito."
 		), self::HTTP_BAD_REQUEST);
 	}
+
 
 	//Metodo para verificar se o saldo na conta é sulficiente para saque
 	public function verificaSaldoSulficiente($cliente_id, $valor_saque, $moeda){
@@ -270,23 +287,26 @@ class Saldo extends API {
 		if($saldoMoeda == 'BRL'){
 			$cotacao = $this->getCotacao($data, $saqueMoeda);
 			if($cotacao){
-				$valor = $saldo/$cotacao['cotacaoVenda'];
-				//echo "Convertendo BRL em  ".$saqueMoeda.": ".$valor;
+
+                //Conversão de BRL para moeda de saque
+				return ($saldo/$cotacao['cotacaoVenda']);
 			}
 		}else{
 			$cotacao = $this->getCotacao($data, $saldoMoeda);
 			if($cotacao){
+
+                //Conversão da moeda para BRL
 				$valorEmReal = $saldo*$cotacao['cotacaoCompra'];
-				//echo "Convertendo ".$saldoMoeda." em BRL: ".$valorEmReal;
 
 				$cotacaoMoeda = $this->getCotacao($data, $saqueMoeda);
 				if($cotacaoMoeda){
-					$valor = $valorEmReal/$cotacaoMoeda['cotacaoVenda'];
-					//echo "Convertendo BRL em ".$saqueMoeda.": ".$valor;
+
+                    //Conversão de BRL para moeda de saque
+					return ($valorEmReal/$cotacaoMoeda['cotacaoVenda']);
 				}
 			}
 		}
-		return $valor;
+		return $this;
 	}
 
 	private function getCotacao($data, $moeda){
@@ -304,9 +324,15 @@ class Saldo extends API {
 	private function diaUtilMaisRecente($data){
 		$data = date($data);
 
-		$data_inicio = new DateTime(date("Y-m-d", strtotime($data)));
-		$data_fim = new DateTime(date("Y-m-d"));
-		$dateInterval = $data_inicio->diff($data_fim);
+        try {
+            $data_inicio = new DateTime(date("Y-m-d", strtotime($data)));
+        } catch (Exception $e) {
+        }
+        try {
+            $data_fim = new DateTime(date("Y-m-d"));
+        } catch (Exception $e) {
+        }
+        $dateInterval = $data_inicio->diff($data_fim);
 
 		if($dateInterval->days > 0){
 			$data = date("d-m-Y");

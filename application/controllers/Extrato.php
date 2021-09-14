@@ -5,8 +5,9 @@ require_once 'API.php';
 class Extrato extends API {
 
 	public $Extrato;
+    public $Conta;
 
-	public  function  __construct()
+    public  function  __construct()
 	{
 		parent::__construct();
 		$this->load->model('ExtratoModel', 'Extrato');
@@ -16,6 +17,16 @@ class Extrato extends API {
 		$this->load->library('form_validation');
 	}
 
+    /**
+     * @api {GET} /extrato/{id_conta}/{data_inicial}/{data_final}
+     * @apiSampleRequest /extrato/25/01-01-2021/01-09/2021
+     * @apiName Extrato da Conta
+     * @apiGroup Extrato
+     * @apiDescription Retorna o extrato de uma conta informada
+     * @apiParam {numeric} [id_conta] obrigatório
+     * @apiParam {date} [data_inicial] opcional
+     * @apiParam {date} [data_final] opcional
+     */
 	public function getExtratoPorConta($id_conta, $data_incial = NULL, $data_final = NULL){
 		self::config(array(
 			'methods' => array('GET')
@@ -72,6 +83,7 @@ class Extrato extends API {
 
 	}
 
+
 	private function imprimirExtrato($extrato){
 		$response = $this->Extrato->getExtrato($extrato);
 		$totalSaques = 0;
@@ -89,9 +101,9 @@ class Extrato extends API {
 			$response['transacoes'][$index]['realizado_em'] = $transacao['realizado_em'];
 		}
 
-		$response['total_transacoes'] = ($totalDepositos+$totalSaques);
-		$response['saques'] = $totalSaques;
-		$response['depositos'] = $totalDepositos;
+		$response['total']['transacoes'] = ($totalDepositos+$totalSaques);
+		$response['total']['saques'] = $totalSaques;
+		$response['total']['depositos'] = $totalDepositos;
 		unset($response['extrato']);
 
 		self::response(array(

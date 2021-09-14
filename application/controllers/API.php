@@ -77,23 +77,7 @@ class API extends CI_Controller
 		$this->_response(array('status' => FALSE, 'error' => 'Método não conhecido', 'request' => $REQUEST_METHOD), self::HTTP_METHOD_NOT_ALLOWED);
 	}
 
-	/**
-	 * Check Request Header Exists
-	 * @param $header_name
-	 * @return array ['status' => true, 'value' => value ]
-	 */
-    private function exists_header($header_name)
-    {
-        $headers = apache_request_headers();
-        foreach ($headers as $header => $value) {
-            if($header === $header_name) {
-                return array('status' => true, 'value' => $value);
-            }
-        }
-		return array('status' => false, 'value' => NULL);
-    }
-
-	/**
+    /**
 	 * Private Response Function
 	 */
 	private function _response($data = NULL, $http_code = NULL)

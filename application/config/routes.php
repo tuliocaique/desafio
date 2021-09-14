@@ -5,13 +5,13 @@ $route['default_controller'] = 'API';
 $route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
 
-$route['cliente/cadastrar'] = 'Cliente/cadastrar';
-$route['cliente/listar'] = 'Cliente/listarTodos';
-$route['cliente/listar/(:num)'] = 'Cliente/listarPorId/$1';
+$route['conta/cadastrar'] = 'Conta/cadastrar';
+$route['conta/listar'] = 'Conta/consultarPorId';
+$route['conta/listar/(:num)'] = 'Conta/consultarPorId/$1';
 
-$route['deposito/novo'] = 'Deposito/cadastrar';
+$route['deposito'] = 'Deposito/cadastrar';
 
-$route['saque/novo'] = 'Saque/cadastrar';
+$route['saque'] = 'Saque/cadastrar';
 
 $route['saldo/(:num)'] = 'Saldo/getSaldoDaConta/$1';
 $route['saldo/(:num)/(:any)'] = 'Saldo/getSaldoDaContaPorMoeda/$1/$2';

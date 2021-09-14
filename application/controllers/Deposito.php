@@ -16,6 +16,16 @@ class Deposito extends Saldo {
 		$this->load->library('form_validation');
 	}
 
+    /**
+     * @api {POST} /deposito
+     * @apiSampleRequest
+     * @apiName Cadastrar
+     * @apiGroup Deposito
+     * @apiDescription Realiza o deposito de um valor em uma conta
+     * @apiParam {numeric} [conta] obrigatório
+     * @apiParam {decimal} [valor] obrigatório
+     * @apiParam {String} [moeda] obrigatório
+     */
 	public function cadastrar()
 	{
 		self::config(array(

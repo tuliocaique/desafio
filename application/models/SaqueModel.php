@@ -19,35 +19,6 @@ class SaqueModel extends CI_Model {
 		}
 	}
 
-	/*
-	public function alterar($parametros, $condicao){
-		$this->db->update($this->tabela, $parametros, $condicao);
-	}
-
-	public function deletar($condicao){
-		$this->db->delete($this->tabela, $condicao);
-	}
-
-	public function listarTodos(){
-		$resposta = $this->db->select('*')
-			->get($this->tabela)
-			->result_array();
-		return array('success' => true, 'status' => 200, 'response' => $resposta);
-	}
-
-	public function listarPorId($cliente){
-		$resposta = $this->db->select(array('cliente_id', 'cliente_nome', 'cliente_cpf', 'conta_id'))
-			->join('conta', 'cliente_id = cliente_id', 'join')
-			->get_where($this->tabela, $cliente)
-			->row_array();
-		if(!empty($resposta)){
-			return array('success' => true, 'status' => 200, 'response' => $resposta);
-		} else {
-			return array('success' => false, 'status' => 400, 'error' => 'Cliente não encontrado.');
-		}
-	}
-*/
-
 	private function ultimoRegistroInserido(){
 		return $this->db->select('*')
 						->order_by('saque_realizado_em', 'DESC')

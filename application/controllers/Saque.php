@@ -16,6 +16,16 @@ class Saque extends Saldo {
 		$this->load->library('form_validation');
 	}
 
+    /**
+     * @api {POST} /saque
+     * @apiSampleRequest
+     * @apiName Cadastrar
+     * @apiGroup Saque
+     * @apiDescription Realiza o saque de um valor em uma conta
+     * @apiParam {numeric} [conta] obrigatório
+     * @apiParam {decimal} [valor] obrigatório
+     * @apiParam {String} [moeda] obrigatório
+     */
 	public function cadastrar()
 	{
 		self::config(array(

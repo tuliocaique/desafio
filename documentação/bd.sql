@@ -1,16 +1,10 @@
 CREATE SCHEMA `api`;
 USE `api`;
 
-CREATE TABLE IF NOT EXISTS `cliente` (
-	`cliente_id` INT(11) AUTO_INCREMENT NOT NULL PRIMARY KEY,
-	`cliente_nome` VARCHAR(100) NOT NULL ,
-	`cliente_cpf` VARCHAR(11) UNIQUE NOT NULL,
-	`cliente_cadastrado_em` TIMESTAMP DEFAULT NOW()
-) ENGINE=InnoDB;
-
 CREATE TABLE IF NOT EXISTS `conta` (
 	`conta_id` INT(11) AUTO_INCREMENT NOT NULL PRIMARY KEY,
-	`conta_id_cliente` INT(11) NOT NULL,
+	`conta_titular_nome` VARCHAR(100) NOT NULL,
+	`conta_titular_cpf` VARCHAR(11) UNIQUE NOT NULL,
 	`conta_cadastrado_em` TIMESTAMP DEFAULT NOW()
 ) ENGINE=InnoDB;
 
