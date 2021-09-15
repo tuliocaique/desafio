@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS `deposito` (
 	`deposito_id_conta` INT(11) NOT NULL,
 	`deposito_valor` DECIMAL(13,4) NOT NULL DEFAULT 0.0,
 	`deposito_moeda` VARCHAR(3) NOT NULL,
-	`deposito_reealizado_em` TIMESTAMP DEFAULT NOW(),
+	`deposito_realizado_em` TIMESTAMP DEFAULT NOW(),
 	FOREIGN KEY (`deposito_id_conta`) REFERENCES `conta`(`conta_id`)
 ) ENGINE=InnoDB;
 
@@ -39,7 +39,7 @@ CREATE VIEW `extrato` AS
     SELECT 	deposito_id_conta AS id_conta,
            	deposito_valor AS valor,
            	deposito_moeda AS moeda,
-           	deposito_reealizado_em AS realizado_em,
+           	deposito_realizado_em AS realizado_em,
            	(SELECT "Depósito") as tipo
     FROM	deposito
 	UNION
@@ -49,5 +49,5 @@ CREATE VIEW `extrato` AS
 			saque_realizado_em AS realizado_em,
 			(SELECT "Saque") as tipo
 	FROM	saque
-    ORDER BY realizado_em ASC;
+    ORDER BY realizado_em DESC;
 

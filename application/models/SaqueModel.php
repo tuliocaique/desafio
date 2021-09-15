@@ -19,33 +19,32 @@ class SaqueModel extends CI_Model {
 		}
 	}
 
-	private function ultimoRegistroInserido(){
-		return $this->db->select('*')
-						->order_by('saque_realizado_em', 'DESC')
-						->limit(1)
-						->get($this->tabela)
-						->row_array();
-	}
-/*
-	function get_default_rules()
+	public function getDefaultRules()
 	{
 		return array(
 			array(
-				'field' => 'deposito_id_conta',
+				'field' => 'saque_id_conta',
 				'label' => 'conta',
 				'rules' => 'required|numeric'
 			),
 			array(
-				'field' => 'deposito_valor',
+				'field' => 'saque_valor',
 				'label' => 'valor',
-				'rules' => 'required|decimal'
+				'rules' => 'required|decimal|greater_than[0]'
 			),
 			array(
-				'field' => 'deposito_moeda',
+				'field' => 'saque_moeda',
 				'label' => 'moeda',
 				'rules' => 'required|exact_length[3]'
 			)
 		);
 	}
-*/
+
+    private function ultimoRegistroInserido(){
+        return $this->db->select('*')
+            ->order_by('saque_realizado_em', 'DESC')
+            ->limit(1)
+            ->get($this->tabela)
+            ->row_array();
+    }
 }

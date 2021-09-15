@@ -2,6 +2,7 @@
 class ExtratoModel extends CI_Model {
 
 	private $view;
+
 	public  function  __construct()
 	{
 		parent::__construct();
@@ -9,7 +10,7 @@ class ExtratoModel extends CI_Model {
 		$this->load->database();
 	}
 
-	function getExtrato($extrato){
+	public function getExtrato($extrato){
 		$this->db->select('*');
 
 		if(isset($extrato['data_inicio']) && isset($extrato['data_fim']))
@@ -21,7 +22,7 @@ class ExtratoModel extends CI_Model {
 		return array("extrato" => $response);
 	}
 
-	function get_default_rules()
+	public function getDefaultRules()
 	{
 		return array(
 			array(

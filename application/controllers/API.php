@@ -41,16 +41,13 @@ class API extends CI_Controller
 	 */
 	public function config(array $config = array())
     {
-        // return other data
         if(isset($config['data']))
             $this->return_other_data = $config['data'];
 
-        // by default method `GET`
-        if ((isset($config) AND empty($config)) OR empty($config['methods'])) {
+        if ((isset($config) AND empty($config)) OR empty($config['methods']))
             $this->_allow_methods(array('GET'));
-        } else {
+        else
             $this->_allow_methods($config['methods']);
-        }
 
 		return $this;
     }
@@ -65,10 +62,8 @@ class API extends CI_Controller
     {
         $REQUEST_METHOD = $this->CI->input->server('REQUEST_METHOD', TRUE);
 
-        // check request method in `$allowed_http_methods` array()
         if (in_array(strtolower($REQUEST_METHOD), $this->allowed_http_methods))
         {
-            // check request method in user define `$methods` array()
             if (in_array(strtolower($REQUEST_METHOD), $methods) OR in_array(strtoupper($REQUEST_METHOD), $methods))
               return true; // allow request method
             else
@@ -87,11 +82,10 @@ class API extends CI_Controller
 		header('content-type:application/json; charset=UTF-8');
 		header($this->hedarStatus[$http_code], true, $http_code);
 
-		if (!is_array($this->return_other_data)) {
+		if (!is_array($this->return_other_data))
 			print_r(json_encode(array('status' => false, 'error' => 'Formato de dados inválido')));
-		} else {
+		else
 			print_r(json_encode(array_merge($data, $this->return_other_data)));
-		}
 		ob_end_flush();
 		die();
 	}
@@ -129,24 +123,8 @@ class API extends CI_Controller
 		return json_decode($response, true);
 	}
 
-	public function post($endpoint, $data){
-		$curl = curl_init();
+    public function index(){
+        $this->load->view('Home/index');
+    }
 
-		curl_setopt_array($curl, array(
-			CURLOPT_URL => $endpoint,
-			CURLOPT_RETURNTRANSFER => true,
-			CURLOPT_ENCODING => '',
-			CURLOPT_MAXREDIRS => 10,
-			CURLOPT_TIMEOUT => 0,
-			CURLOPT_FOLLOWLOCATION => true,
-			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-			CURLOPT_CUSTOMREQUEST => 'POST',
-			CURLOPT_POSTFIELDS => $data,
-		));
-
-		$response = curl_exec($curl);
-
-		curl_close($curl);
-		return json_decode($response, true);
-	}
 }

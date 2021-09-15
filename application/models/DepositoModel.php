@@ -19,15 +19,7 @@ class DepositoModel extends CI_Model {
 		}
 	}
 
-	private function ultimoRegistroInserido(){
-		return $this->db->select('*')
-						->order_by('deposito_reealizado_em', 'DESC')
-						->limit(1)
-						->get($this->tabela)
-						->row_array();
-	}
-
-	public function get_default_rules()
+	public function getDefaultRules()
 	{
 		return array(
 			array(
@@ -38,7 +30,7 @@ class DepositoModel extends CI_Model {
 			array(
 				'field' => 'deposito_valor',
 				'label' => 'valor',
-				'rules' => 'required|decimal'
+				'rules' => 'required|decimal|greater_than[0]'
 			),
 			array(
 				'field' => 'deposito_moeda',
@@ -47,4 +39,12 @@ class DepositoModel extends CI_Model {
 			)
 		);
 	}
+
+    private function ultimoRegistroInserido(){
+        return $this->db->select('*')
+            ->order_by('deposito_realizado_em', 'DESC')
+            ->limit(1)
+            ->get($this->tabela)
+            ->row_array();
+    }
 }

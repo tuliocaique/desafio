@@ -35,7 +35,7 @@ class Conta extends API {
 			"conta_titular_cpf" => $this->input->post('cpf',TRUE)
 		);
 
-		$this->form_validation->set_rules($this->Conta->get_default_rules());
+		$this->form_validation->set_rules($this->Conta->getDefaultRules());
 		$this->form_validation->set_data($conta);
 
 		if ($this->form_validation->run()) {
@@ -81,14 +81,14 @@ class Conta extends API {
 			'methods' => array('GET')
 		));
 
-        //Verifica se a id do cliente foi informada
+        //Verifica se a id da conta foi informada
 		if(isset($id_conta)){
-            $cliente = array(
+            $conta = array(
                 "conta_id" => $id_conta
             );
-			$response = $this->Conta->consultarPorId($cliente);
+			$response = $this->Conta->consultarPorId($conta);
 
-            //Verifica se a busca pelo cliente teve sucesso
+            //Verifica se a busca pela conta teve sucesso
             if ($response['success']){
                 self::response(array(
                     "success" => true,

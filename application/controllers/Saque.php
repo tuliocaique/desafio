@@ -38,7 +38,7 @@ class Saque extends Saldo {
 			"saque_moeda" => $this->input->post('moeda',TRUE)
 		);
 
-		$this->form_validation->set_rules($this->Saque->get_default_rules());
+		$this->form_validation->set_rules($this->Saque->getDefaultRules());
 		$this->form_validation->set_data($saque);
 
 		if ($this->form_validation->run()) {
@@ -58,16 +58,33 @@ class Saque extends Saldo {
 						if($response_saque['success']){
 							//Atualiza a tabela saldo na moeda e com o saldo informado da conta em questão
 							self::atualizaSaldo('saque', $saque['saque_id_conta'], $saque['saque_valor'], $saque['saque_moeda']);
+                            $response = array(
+                                'menssagem' => 'O Saque foi realizado com sucesso!',
+                                'deposito' => array(
+                                    'codigo' => md5($response_saque['data']['saque_id']),
+                                    'conta' => $response_saque['data']['saque_id_conta'],
+                                    'valor' => $response_saque['data']['saque_valor'],
+                                    'moeda' => $response_saque['data']['saque_moeda'],
+                                    'realizado' => $response_saque['data']['saque_realizado_em']
+                                )
+                            );
+                            self::response(array(
+                                "success" => true,
+                                "status" => self::HTTP_OK,
+                                "response" => $response
+                            ), self::HTTP_OK);
+
 						} else self::response(array(
 								"success" => false,
 								"status" => self::HTTP_BAD_REQUEST,
 								"error" => $response_saque['error']
 							), self::HTTP_BAD_REQUEST);
 
-					}else{
+					} else {
 						//Quando o saldo na moeda informada não é sulfiente para realizar o saque
 						$saldosParaSacar = array();
 						$somatorio = 0;
+
 
 						//Retorna todos os saldos de todas as moedas da conta informada
 						$todosSaldos = self::consultarTodosSaldosConta($saque['saque_id_conta']);
@@ -92,7 +109,7 @@ class Saque extends Saldo {
 								$todosSaldos[$index]['saque_conversao_moeda'] = $saque['saque_moeda'];
 
 								//Subtrai o valor a ser sacado pelo saldo disponivel, sendo 'quantidade_restante' o valor restante a sacar das demais moedas para completar o valor do saque
-								$quantidade_restante = $saque['saque_valor'] - $saldo['saldo_valor'];
+								$quantidade_restante = ($saque['saque_valor'] - $saldo['saldo_valor']);
 
 								//Armazena o somatório do valor de saldo para a moeda de saque
 								$somatorio += $saldo['saldo_valor'];
@@ -105,60 +122,69 @@ class Saque extends Saldo {
 							}
 						}
 
-						//Percorre novamente os saldos para obter a quantidade de saldo necessaria das outras moedas para realizar o saque
-						foreach ($todosSaldos as $index => $saldo){
+                        //Verifica se o somatorio de todas as moedas do saldo convertido para moeda de saque é sulficiente para realizar o saque
+                        if($somatorio >= $saque['saque_valor']){
 
-							//Verifica se a moeda do saldo é diferente da moeda que deseja sacar
-							if($saldo['saldo_moeda'] !== $saque['saque_moeda']) {
+                            $quantidade_restante = $saque['saque_valor'];
 
-								$todosSaldos[$index]['saque_conversao'] = $this->conversao($saldo['saldo_valor'], $saldo['saldo_moeda'], $saque['saque_moeda']);
-								$todosSaldos[$index]['saque_conversao_moeda'] = $saque['saque_moeda'];
+                            //Percorre novamente os saldos para obter a quantidade de saldo necessaria das outras moedas para realizar o saque
+                            foreach ($todosSaldos as $index => $saldo){
 
-								if($quantidade_restante > 0){
-									if($todosSaldos[$index]['saque_conversao'] >= $quantidade_restante ){
-										//$valorConverter = $todosSaldos[$index]['saque_conversao'] - $quantidade_restante;
-										$conversaoFinal = $this->conversao($quantidade_restante, $saque['saque_moeda'], $saldo['saldo_moeda']);
-										array_push($saldosParaSacar, array(
-												"saldo_valor" => $conversaoFinal,
-												"saldo_moeda" => $saldo['saldo_moeda'])
-										);
-										$quantidade_restante = 0;
-									}else{
-										$conversaoFinal = $this->conversao($quantidade_restante, $saldo['saldo_moeda'], $saque['saque_moeda']);
+                                //Verifica se a moeda do saldo é diferente da moeda que deseja sacar
+                                if($saldo['saldo_moeda'] !== $saque['saque_moeda']) {
+                                    if($quantidade_restante > 0){
 
-										array_push($saldosParaSacar, array(
-												"saldo_valor" => $conversaoFinal,
-												"saldo_moeda" => $saldo['saldo_moeda'])
-										);
-										$quantidade_restante = ($quantidade_restante - $todosSaldos[$index]['saque_conversao']);
-									}
-								}
-							}
-						}
+                                        if($todosSaldos[$index]['saque_conversao'] >= $quantidade_restante ){
+                                            $conversao = $this->conversao($quantidade_restante, $saque['saque_moeda'], $saldo['saldo_moeda']);
+                                            $quantidade_restante = 0;
+                                        } else {
+                                            $conversao = $this->conversao($quantidade_restante, $saldo['saldo_moeda'], $saque['saque_moeda']);
+                                            $quantidade_restante = ($quantidade_restante - $todosSaldos[$index]['saque_conversao']);
+                                        }
+
+                                        array_push($saldosParaSacar, array(
+                                                "saldo_valor" => $conversao,
+                                                "saldo_moeda" => $saldo['saldo_moeda'])
+                                        );
+
+                                    }
+                                }
+                            }
 
 
-						if($quantidade_restante > 0){
-							$response_saque = array(
-								'menssagem' => 'O Saque não pode ser realizado devido ao saldo insulficiente! Seu saldo atual é de '.$saque['saque_moeda'] .' '.number_format((float)$somatorio, 2, '.', ''),
-							);
+                            foreach ($saldosParaSacar as $item_saldo){
+                                self::atualizaSaldo('saque', $saque['saque_id_conta'], $item_saldo['saldo_valor'], $item_saldo['saldo_moeda']);
+                            }
+                            $response_saque = $this->Saque->cadastrar($saque);
 
-							self::response(array(
-								"success" => false,
-								"status" => self::HTTP_BAD_REQUEST,
-								"error" => $response_saque
-							), self::HTTP_BAD_REQUEST);
-						} else {
-							foreach ($saldosParaSacar as $item_saldo){
-								print_r($item_saldo['saldo_valor']." | ". $item_saldo['saldo_moeda'].PHP_EOL);
-								//self::atualizaSaldo('saque', $saque['saque_id_conta'], $item_saldo['saldo_valor'], $item_saldo['saldo_moeda']);
-							}
-							/*$response_saque = $this->Saque->cadastrar($saque);
-							self::response(array(
-								"success" => true,
-								"status" => self::HTTP_OK,
-								"response" => array("Saque realizado!")
-							), self::HTTP_OK);*/
-						}
+                            $response = array(
+                                'menssagem' => 'O Saque foi realizado com sucesso!',
+                                'deposito' => array(
+                                    'codigo' => md5($response_saque['data']['saque_id']),
+                                    'conta' => $response_saque['data']['saque_id_conta'],
+                                    'valor' => $response_saque['data']['saque_valor'],
+                                    'moeda' => $response_saque['data']['saque_moeda'],
+                                    'realizado' => $response_saque['data']['saque_realizado_em']
+                                )
+                            );
+                            self::response(array(
+                                "success" => true,
+                                "status" => self::HTTP_OK,
+                                "response" => $response
+                            ), self::HTTP_OK);
+
+                        } else {
+                            $response_saque = array(
+                                'menssagem' => 'O Saque não pode ser realizado devido ao saldo insulficiente! Seu saldo atual é de '.$saque['saque_moeda'] .' '.number_format((float)$somatorio, 2, '.', ''),
+                            );
+
+                            self::response(array(
+                                "success" => false,
+                                "status" => self::HTTP_BAD_REQUEST,
+                                "error" => $response_saque
+                            ), self::HTTP_BAD_REQUEST);
+                        }
+
 					}
 
 				} else self::response(array(

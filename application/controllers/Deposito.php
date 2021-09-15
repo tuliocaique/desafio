@@ -20,8 +20,8 @@ class Deposito extends Saldo {
      * @api {POST} /deposito
      * @apiSampleRequest
      * @apiName Cadastrar
-     * @apiGroup Deposito
-     * @apiDescription Realiza o deposito de um valor em uma conta
+     * @apiGroup Depósito
+     * @apiDescription Realiza o depósito de um valor em uma conta
      * @apiParam {numeric} [conta] obrigatório
      * @apiParam {decimal} [valor] obrigatório
      * @apiParam {String} [moeda] obrigatório
@@ -38,7 +38,7 @@ class Deposito extends Saldo {
 			"deposito_moeda" => $this->input->post('moeda',TRUE)
 		);
 
-		$this->form_validation->set_rules($this->Deposito->get_default_rules());
+		$this->form_validation->set_rules($this->Deposito->getDefaultRules());
 		$this->form_validation->set_data($deposito);
 
 		if ($this->form_validation->run()) {
@@ -48,22 +48,22 @@ class Deposito extends Saldo {
 
 				//Verifica se a moeda informada é válida
 				if(self::verificaMoedaPermitida($deposito['deposito_moeda'])){
-					//Realiza o deposito no valor e moeda informados
+					//Realiza o depósito no valor e moeda informados
 					$response_deposito = $this->Deposito->cadastrar($deposito);
 
-					//Verifica se o deposito foi realizado com sucesso
+					//Verifica se o depósito foi realizado com sucesso
 					if($response_deposito['success']){
 						//Atualiza a tabela saldo na moeda e com o saldo informado da conta em questão
 						self::atualizaSaldo('deposito', $deposito['deposito_id_conta'], $deposito['deposito_valor'], $deposito['deposito_moeda']);
 
 						$response = array(
-							'menssagem' => 'O Deposito foi realizado com sucesso!',
+							'menssagem' => 'O Depósito foi realizado com sucesso!',
 							'deposito' => array(
 								'codigo' => md5($response_deposito['data']['deposito_id']),
 								'conta' => $response_deposito['data']['deposito_id_conta'],
 								'valor' => $response_deposito['data']['deposito_valor'],
 								'moeda' => $response_deposito['data']['deposito_moeda'],
-								'realizado' => $response_deposito['data']['deposito_reealizado_em']
+								'realizado' => $response_deposito['data']['deposito_realizado_em']
 							)
 						);
 						self::response(array(

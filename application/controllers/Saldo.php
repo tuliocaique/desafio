@@ -87,10 +87,21 @@ class Saldo extends API {
 					$response['conta'] = intval($saldo_id_conta);
 					$response['data'] = date("d-m-Y H:i:s");
 					$saldo = $this->Saldo->getSaldoDaContaPorMoeda($saldo_id_conta, $saldo_moeda);
-					$response['saldo']['valor'] = number_format((float)$saldo['saldo_valor'], 2, '.', '');
-					$response['saldo']['moeda'] = $saldo_moeda;
-
+					$nativo['valor'] = number_format((float)$saldo['saldo_valor'], 2, '.', '');
+                    $nativo['moeda'] = $saldo_moeda;
+                    $nativo['descricao'] = "O valor é referente ao saldo em conta na moeda informada.";
 					unset($saldo);
+
+                    $saldo_convertido = $this->obterSomatorioSaldosConvertidos($saldo_id_conta, $saldo_moeda);
+                    $conversao_outras_moedas['valor'] = number_format((float)$saldo_convertido, 2, '.', '');
+                    $conversao_outras_moedas['moeda'] = $saldo_moeda;
+                    $conversao_outras_moedas['descricao'] = "O valor é referente ao saldo de todas as moedas convertido para a moeda informada.";
+
+                    $saldo['nativo'] = $nativo;
+                    $saldo['conversao_outras_moedas'] = $conversao_outras_moedas;
+
+                    $response['saldo'] = $saldo;
+
 					self::response(array(
 						"success" => true,
 						"status" => self::HTTP_OK,
@@ -287,26 +298,27 @@ class Saldo extends API {
 		if($saldoMoeda == 'BRL'){
 			$cotacao = $this->getCotacao($data, $saqueMoeda);
 			if($cotacao){
-
                 //Conversão de BRL para moeda de saque
 				return ($saldo/$cotacao['cotacaoVenda']);
 			}
 		}else{
 			$cotacao = $this->getCotacao($data, $saldoMoeda);
 			if($cotacao){
-
                 //Conversão da moeda para BRL
 				$valorEmReal = $saldo*$cotacao['cotacaoCompra'];
 
-				$cotacaoMoeda = $this->getCotacao($data, $saqueMoeda);
-				if($cotacaoMoeda){
-
-                    //Conversão de BRL para moeda de saque
-					return ($valorEmReal/$cotacaoMoeda['cotacaoVenda']);
-				}
+                if($saqueMoeda == 'BRL')
+                    return $valorEmReal;
+                else {
+                    $cotacaoMoeda = $this->getCotacao($data, $saqueMoeda);
+                    if($cotacaoMoeda){
+                        //Conversão de BRL para moeda de saque
+                        return ($valorEmReal/$cotacaoMoeda['cotacaoVenda']);
+                    }
+                }
 			}
 		}
-		return $this;
+        return null;
 	}
 
 	private function getCotacao($data, $moeda){
@@ -317,8 +329,7 @@ class Saldo extends API {
 					return array("cotacaoCompra" => $boletim['cotacaoCompra'], "cotacaoVenda" => $boletim['cotacaoVenda']);
 			}
 		}
-
-		$this->getCotacao(date("d-m-Y", strtotime($data."-1 days")), $moeda);
+        return null;
 	}
 
 	private function diaUtilMaisRecente($data){
@@ -346,4 +357,23 @@ class Saldo extends API {
 
 		return date("m-d-Y", strtotime($data));
 	}
+
+    private function obterSomatorioSaldosConvertidos($saldo_id_conta, $saldo_moeda){
+        $todosSaldos = $this->consultarTodosSaldosConta($saldo_id_conta);
+        $somatorio = 0;
+        foreach ($todosSaldos as $saldo){
+
+            //Verifica se a moeda do saldo é diferente da moeda que deseja sacar
+            if($saldo['saldo_moeda'] !== $saldo_moeda) {
+                //Como as moedas são diferentes, realiza-se a conversão da moeda atual para a moeda de saque
+                $saqueConversao = $this->conversao($saldo['saldo_valor'], $saldo['saldo_moeda'], $saldo_moeda);
+                if($saqueConversao != null)
+                    $somatorio += $saqueConversao;
+            } else {
+                //Armazena o somatório do valor de saldo para a moeda de saque
+                $somatorio += $saldo['saldo_valor'];
+            }
+        }
+        return $somatorio;
+    }
 }

@@ -37,7 +37,7 @@ class ContaModel extends CI_Model {
 		return $retorno > 0;
 	}
 
-    public function get_default_rules()
+    public function getDefaultRules()
     {
         return array(
             array(
